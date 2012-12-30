@@ -1,9 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="stylesheet" type="text/css" href="style.css">
 <script type="text/javascript" src="tools/jquery-1.8.3.min.js"></script>
+<script type="text/javascript" src="slitherer.js"></script>
 </head>
 <body>
-<h1>Canvas Slitherer</h1>
+<script type="text/javascript">
+$(function() {
+    var canvas = document.getElementById('board');
+    var context = canvas.getContext('2d');
+    var board = field.init(canvas, 10, 15);
+
+    var mousedown = false;
+
+    $('canvas').mousedown(function(evt) {
+        mousedown = true;
+    }).mouseup(function(evt) {
+        mousedown = false;
+    }).mousemove(function(evt) {
+        if(!mousedown) return;
+        var tile = board.tileAt(evt.offsetX, evt.offsetY); 
+        if(!tile) return;
+        if(!tile.isRoad()) {
+            board.addRoadPiece(tile, context);
+            tile.isRoad(true);
+        }
+    });
+
+});
+</script>
+<h1 class="center">Canvas Slitherer</h1>
+<canvas id="board" class="center" width="900" height="540"></canvas>
 </body>
 </html>

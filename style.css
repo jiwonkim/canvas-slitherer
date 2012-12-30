@@ -1,0 +1,21 @@
+body {
+    font-family: 'Trebuchet MS', sans-serif;
+}
+h1 {
+    width: 600px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+    font-size: 40pt;
+    font-weight: normal;
+    font-family: 'HelveticaNeue-Light', 'Helvetica Neue Light', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    letter-spacing: -1px;
+    text-align: center;
+
+    color: #999;
+}
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
