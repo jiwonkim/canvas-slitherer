@@ -1,4 +1,13 @@
 var field = window.field = {};
+//TODO Make field into a closure with multiple layers of canvases
+field.mode = 'roads';
+field.displayCursor = function(context, cursor, x, y, w, h) {
+    context.clearRect(0, 0, w, h);
+    context.drawImage(cursor, x, y);
+}
+field.removeCursor = function(context, w, h) {
+    context.clearRect(0, 0, w, h); 
+}
 
 field.tile = function() {
     var row, col, width, height, gap;

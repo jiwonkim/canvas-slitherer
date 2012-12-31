@@ -8,9 +8,26 @@
 <body>
 <script type="text/javascript">
 $(function() {
-    var canvas = document.getElementById('board');
-    var context = canvas.getContext('2d');
-    var board = field.init(canvas, 10, 15);
+    document.onselectstart = function () { return false; }
+    var cursorCanvas = document.getElementById('cursor');
+    var cursorContext = cursorCanvas.getContext('2d');
+
+    var boardCanvas = document.getElementById('board');
+    var boardContext = boardCanvas.getContext('2d');
+
+    var board = field.init(boardCanvas, 10, 15);
+    var width = boardCanvas.width;
+    var height = boardCanvas.height;
+
+    var cursors = {};
+    ['roads', 'snakes', 'ladders'].forEach(function(mode) {
+        cursors[mode] = new Image();
+        cursors[mode].src = 'images/'+mode+'cursor.png';
+        cursors[mode].loaded = false;
+        cursors[mode].onLoad = function() {
+            cursors[mode].loaded = true; 
+        }
+    });
 
     var mousedown = false;
 
@@ -18,13 +35,20 @@ $(function() {
         mousedown = true;
     }).mouseup(function(evt) {
         mousedown = false;
+    }).mouseout(function(evt) {
+        // remove mouse cursor image
+        field.removeCursor(cursorContext, width, height);
     }).mousemove(function(evt) {
+        // display mode as mouse cursor
+        field.displayCursor(cursorContext, cursors[field.mode],
+            evt.offsetX, evt.offsetY, width, height);
+        
         if(!mousedown) return;
         var tile = board.tileAt(evt.offsetX, evt.offsetY); 
         if(!tile) return;
         if(!tile.isRoad()) {
             try {
-                board.addRoad(tile, context);
+                board.addRoad(tile, boardContext);
             } catch (err) {
                 mousedown=false;
                 $('#errors p').html(err);
@@ -34,13 +58,42 @@ $(function() {
         }
     });
 
+    $('#mode-selector button').click(function() {
+        $('#mode-selector .selected').removeClass('selected');
+        $(this).addClass('selected');
+        field.mode = $(this).attr('id');
+    }); 
 });
 </script>
-<h1 class="center">Canvas Slitherer</h1>
-<div id="errors" class="center">
-<img src="images/error.png" />
-<p>Errors here</p>
+<div id="top">
+<img src="images/title.jpg" />
+<hr />
 </div>
-<canvas id="board" class="center" width="900" height="540"></canvas>
+<div id="left">
+    <div id="mode-selector">
+        <button class="selected" id="roads"></button>
+        <button id="snakes"></button>
+        <button id="ladders"></button>
+    </div>
+
+    <hr />
+    
+    <div id="tools">
+        <button id="add"></button>
+        <button id="delete"></button>
+        <button id="start-over"></button>
+    </div>
+
+</div>
+<div id="right">
+    <div id="status">
+    <img src="images/erroricon.png" />
+    <p>Errors here</p>
+    </div>
+    <div id="viewport">
+        <canvas id="board" width="900" height="540"></canvas>
+        <canvas id="cursor" width="900" height="540"></canvas>
+    </div>
+</div>
 </body>
 </html>

@@ -19,23 +19,123 @@ h1 {
     margin-left: auto;
     margin-right: auto;
 }
-#errors {
+#status {
     width: 900px;
     height: 50px;
+    display: block;
 }
 
-#errors img {
+#status img {
     float: left;
+    margin-top: -3px;
     margin-left: 10px;
 }
 
-#errors p {
-    margin-top: 10px;
+#status p {
+    margin-top: 20px;
     margin-left: 15px;
     float: left;
     color: #bb3936;
     font-size: 12pt;
 }
-canvas {
+
+#top {
+    display: block;
     clear: both;
+}
+
+#left {
+    width: 300px;
+    float: left;
+}
+
+#left hr {
+    width: 250px;
+    margin: 10px;
+}
+
+#mode-selector button {
+    margin-top: 30px;
+    margin-left: 5px;
+    display: inline-block;
+    -webkit-box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+    -moz-box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+    box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+    color:#333;
+    border-radius:5px;
+    -moz-border-radius:5px;
+    -webkit-border-radius:5px;
+    border:none;
+    font-family:'Helvetica Neue',Arial,sans-serif;
+    font-size:16px;
+    font-weight:700;
+    padding:4px 4px;
+    text-shadow:#FE6 0 1px 0;
+    width: 82px;
+    height: 82px;
+    background-repeat: no-repeat;
+    background-color:#f0f0f0;
+}    
+
+#mode-selector .selected {
+    -webkit-box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.2);
+    -moz-box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.2);
+    border: solid 1px #aaa;
+    position: relative;
+    top: 1px;
+    background-color: #ddd;
+}
+
+#roads {
+    background-image: url('images/roadsicon.png');
+}
+
+#snakes {
+    background-image: url('images/snakesicon.png');
+}
+
+#ladders {
+    background-image: url('images/laddersicon.png');
+}
+
+#tools button {
+    margin-left: 5px;
+    background-color: transparent;
+    border: none;
+    width: 80px;
+    height: 80px;
+}
+
+#add {
+    background-image: url('images/addicon.png');
+}
+
+#delete {
+    background-image: url('images/deleteicon.png');
+}
+
+#start-over {
+    background-image: url('images/startovericon.png');
+}
+
+#right {
+    min-width: 800px;
+    float: left;
+}
+#viewport {
+    clear: both;
+    position: relative;
+}
+#viewport canvas{
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: none;
+}
+#board {
+    z-index: 1;   
+}
+#cursor {
+    z-index: 2;
 }
