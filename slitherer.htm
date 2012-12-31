@@ -9,59 +9,39 @@
 <script type="text/javascript">
 $(function() {
     document.onselectstart = function () { return false; }
-    var cursorCanvas = document.getElementById('cursor');
-    var cursorContext = cursorCanvas.getContext('2d');
-
-    var boardCanvas = document.getElementById('board');
-    var boardContext = boardCanvas.getContext('2d');
-
-    var board = field.init(boardCanvas, 10, 15);
-    var width = boardCanvas.width;
-    var height = boardCanvas.height;
-
-    var cursors = {};
-    ['roads', 'snakes', 'ladders'].forEach(function(mode) {
-        cursors[mode] = new Image();
-        cursors[mode].src = 'images/'+mode+'cursor.png';
-        cursors[mode].loaded = false;
-        cursors[mode].onLoad = function() {
-            cursors[mode].loaded = true; 
-        }
-    });
+    var field = slitherer()
+        .init(
+            document.getElementById('board-layer'),
+            document.getElementById('snakes-layer'),
+            document.getElementById('ladders-layer'),
+            document.getElementById('cursor-layer')
+        );
 
     var mousedown = false;
-
     $('canvas').mousedown(function(evt) {
         mousedown = true;
     }).mouseup(function(evt) {
         mousedown = false;
     }).mouseout(function(evt) {
         // remove mouse cursor image
-        field.removeCursor(cursorContext, width, height);
+        field.clearLayer('cursor')
     }).mousemove(function(evt) {
         // display mode as mouse cursor
-        field.displayCursor(cursorContext, cursors[field.mode],
-            evt.offsetX, evt.offsetY, width, height);
+        field.displayCursor(evt.offsetX, evt.offsetY);
         
         if(!mousedown) return;
-        var tile = board.tileAt(evt.offsetX, evt.offsetY); 
-        if(!tile) return;
-        if(!tile.isRoad()) {
-            try {
-                board.addRoad(tile, boardContext);
-            } catch (err) {
-                mousedown=false;
-                $('#errors p').html(err);
-                return;
-            }
-            tile.isRoad(true);
+        try {
+            field.addRoadAt(evt.offsetX, evt.offsetY);
+        } catch (err) {
+            mousedown=false;
+            $('#errors p').html(err);
         }
     });
 
     $('#mode-selector button').click(function() {
         $('#mode-selector .selected').removeClass('selected');
         $(this).addClass('selected');
-        field.mode = $(this).attr('id');
+        field.mode($(this).attr('id'));
     }); 
 });
 </script>
@@ -91,8 +71,10 @@ $(function() {
     <p>Errors here</p>
     </div>
     <div id="viewport">
-        <canvas id="board" width="900" height="540"></canvas>
-        <canvas id="cursor" width="900" height="540"></canvas>
+        <canvas id="board-layer" width="900" height="540"></canvas>
+        <canvas id="snakes-layer" width="900" height="540"></canvas>
+        <canvas id="ladders-layer" width="900" height="540"></canvas>
+        <canvas id="cursor-layer" width="900" height="540"></canvas>
     </div>
 </div>
 </body>

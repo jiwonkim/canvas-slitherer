@@ -133,9 +133,15 @@ h1 {
     left: 0;
     cursor: none;
 }
-#board {
+#board-layer {
     z-index: 1;   
 }
-#cursor {
+#snakes-layer {
     z-index: 2;
+}
+#ladders-layer {
+    z-index: 3;
+}
+#cursor-layer {
+    z-index: 4;
 }

@@ -1,15 +1,78 @@
-var field = window.field = {};
-//TODO Make field into a closure with multiple layers of canvases
-field.mode = 'roads';
-field.displayCursor = function(context, cursor, x, y, w, h) {
-    context.clearRect(0, 0, w, h);
-    context.drawImage(cursor, x, y);
-}
-field.removeCursor = function(context, w, h) {
-    context.clearRect(0, 0, w, h); 
+var slitherer = window.slitherer = function() {
+    //TODO Make field into a closure with multiple layers of canvases
+    var mode = 'roads';
+    var contexts = {};
+    var cursors = {};
+    var width, height, board;
+
+    var field = {};
+    
+    // initialize field with canvas elements for different layers
+    field.init = function(roadsCanvas, snakesCanvas, laddersCanvas, cursorCanvas) {
+        width = roadsCanvas.width;
+        height = roadsCanvas.height; 
+        contexts['roads'] = roadsCanvas.getContext('2d');
+        contexts['snakes'] = snakesCanvas.getContext('2d');
+        contexts['ladders'] = laddersCanvas.getContext('2d');
+        contexts['cursor'] = cursorCanvas.getContext('2d');
+
+        // init cursors
+        ['roads', 'snakes', 'ladders'].forEach(function(mode) {
+            cursors[mode] = new Image();
+            cursors[mode].src = 'images/'+mode+'cursor.png';
+            cursors[mode].loaded = false;
+            cursors[mode].onLoad = function() {
+                cursors[mode].loaded = true; 
+            }
+        });
+
+        board = slitherer.board()
+            .width(width)
+            .height(height)
+            .gap(1)
+            .numRows(10)
+            .numCols(15)
+            .create()
+            .update(contexts['roads']);
+
+        // init board
+        board();
+        return field;
+    }
+
+    field.mode = function(val) {
+        if(val==undefined) return mode;
+        mode = val;
+        return field;
+    }
+
+    field.clearLayer = function(layer) {
+        contexts[layer].clearRect(0, 0, width, height);
+    }
+    
+    field.displayCursor = function(x, y) {
+        field.clearLayer('cursor');
+        contexts['cursor'].drawImage(cursors[mode], x, y);
+    }
+
+    field.addRoadAt = function(x, y) {
+        var tile = board.tileAt(x, y); 
+        if(!tile) return;
+        if(!tile.isRoad()) {
+            try {
+                board.addRoad(tile, contexts['roads']);
+            } catch (err) {
+                throw err;
+                return;
+            }
+            tile.isRoad(true);
+        }
+    }
+     
+    return field;
 }
 
-field.tile = function() {
+slitherer.tile = function() {
     var row, col, width, height, gap;
     var isRoad = false;
     var roadNumber = 0;
@@ -98,7 +161,7 @@ field.tile = function() {
     return tile;
 }
 
-field.board = function() {
+slitherer.board = function() {
     var width, height, numRows, numCols, gap;
     var tilew, tileh;
     var tiles = [];
@@ -155,7 +218,7 @@ field.board = function() {
         for(var r=0; r<numRows; r++) {
             tiles[r] = [];
             for(var c=0; c<numCols; c++) { 
-                tiles[r][c] = field.tile()
+                tiles[r][c] = slitherer.tile()
                     .row(r).col(c)
                     .width(tilew).height(tileh)
                     .gap(gap);
@@ -297,21 +360,5 @@ field.board = function() {
         return Math.floor(x/(tilew+gap));
     }
     
-    return board;
-}
-
-field.init = function(canvas, nrows, ncols) {
-    var context = canvas.getContext('2d');
-    var board = field.board()
-        .width(canvas.width)
-        .height(canvas.height)
-        .gap(1)
-        .numRows(nrows)
-        .numCols(ncols)
-        .create()
-        .update(context);
-
-    board();
-
     return board;
 }
