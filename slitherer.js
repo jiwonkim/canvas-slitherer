@@ -3,6 +3,7 @@ var field = window.field = {};
 field.tile = function() {
     var row, col, width, height, gap;
     var isRoad = false;
+    var roadNumber = 0;
 
     // default tile background
     var image = new Image();
@@ -16,12 +17,17 @@ field.tile = function() {
         if(!image.loaded) {
             setTimeout(function() { tile(context); }, 10);
         }
-        context.drawImage(
-            image,
-            col*(width+gap),
-            row*(height+gap),
-            width, height
-        );
+        
+        var x = col*(width+gap);
+        var y = row*(height+gap);
+        context.drawImage(image, x, y, width, height);
+
+        if(isRoad) {
+            // draw road number
+            context.font = "16px Helvetica Neue"; 
+            context.fillStyle = "rgba(0, 0, 0, 0.3)";
+            context.fillText(roadNumber, x + gap, y + height - gap*5);
+        }
     }
 
     tile.row = function(val) {
@@ -69,11 +75,15 @@ field.tile = function() {
     }
 
     tile.isRoad = function(val) {
-        if(val!=undefined) {
-            isRoad = val;
-            return tile;
-        }
-        return isRoad; 
+        if(val==undefined) return isRoad; 
+        isRoad = val;
+        return tile;
+    }
+
+    tile.roadNumber = function(val) {
+        if(val==undefined) return roadNumber;
+        roadNumber = val;
+        return tile;
     }
 
     return tile;
@@ -160,9 +170,20 @@ field.board = function() {
         return board;
     }
 
-    board.addRoadPiece = function(tile, context) {
+    board.addRoad = function(tile, context) {
+        if(positionNotConnected(tile)) {
+            throw "Illegal";
+        }
+
+        try {
+            updateRoad(tile, context);
+        } catch(err) {
+            throw err;
+        }
+
+        // add tile to continuing road
         roadPieces.push(tile);
-        updateRoadTexture(tile, context);
+        tile.roadNumber(roadPieces.length);
     }
 
     // returns 'n', 's', 'e', 'w' that describes tile's location
@@ -173,45 +194,84 @@ field.board = function() {
         var ar = adjacent.row();
         var ac = adjacent.col();
 
-        if(ar-tr==1) return 'n';
-        else if(ar-tr==-1) return 's';
-        else if(ac-tc==1) return 'w';
-        else if(ac-tc==-1) return 'e';
+        var dr = ar-tr;
+        var dc = ac-tc;
         
-        return ''; // not adjacent
+        // not adjacent
+        if(Math.abs(dr) + Math.abs(dc) > 1) {
+            return false;
+        }
+
+        if(dr==1) return 'n';
+        else if(dr==-1) return 's';
+        else if(dc==1) return 'w';
+        else return 'e';
     }
 
-    function updateRoadTexture(tile, context) {
-        // iterates through the road pieces, and finds the best road
-        // texture (orientation) for the newly added tile
+    function positionNotConnected(tile) {
+        var r = tile.row();
+        var c = tile.col();
+
+        if(roadPieces.length==0) {
+            return (r>0 && r<numRows-1) &&
+                (c>0 && c<numCols-1);
+        } else {
+            return !findRelativeLocation(tile,
+                roadPieces[roadPieces.length-1]);
+        }
+    }
+
+    function findSandwichOrientation(variable, f1, f2) {
+        var loc1, loc2;
+        loc1 = typeof f1=="string" ? f1 : findRelativeLocation(f1, variable);
+        loc2 = typeof f2=="string" ? f2 : findRelativeLocation(f2, variable);
+        return loc1 + loc2;
+    }
+
+    function updateRoad(tile, context) {
         var orientation = 'ew'; // default
         var nRoadPieces = roadPieces.length;
 
-        if (nRoadPieces > 1) {
-            var curr = roadPieces[nRoadPieces-2];
-            var cr = curr.row();
-            var cc = curr.col();
-            var nr = tile.row();
-            var nc = tile.col();
-            if (Math.abs(nr-cr)==1) {
+        // find and update orientation for newly added tile
+        if (nRoadPieces==0) {
+            // first road piece. Make sure it is jutting out ns if
+            // starting from a col s.t. 0 < c < nCols-1
+            if(tile.col() > 0 && tile.col() < numCols-1) {
+                orientation = 'ns';    
+            }
+            
+        } else {
+            var curr = roadPieces[nRoadPieces-1];
+            var nextLocation = findRelativeLocation(tile, curr);
+
+            if(nextLocation=='n' || nextLocation=='s') {
                 orientation = 'ns';
             }
 
-            if (curr.image().orientation != orientation && nRoadPieces > 2) {
-                var prev = roadPieces[roadPieces.length-3];
-                var prevLocation = findRelativeLocation(prev, curr);
-                var nextLocation = findRelativeLocation(tile, curr);
-                
-                console.log(prevLocation+","+nextLocation);
-
-                if(prevLocation!='') {
-                    curr.image(roadTextures[prevLocation+nextLocation]);
-                    curr.update(context);
-                }
-            }
+            //TODO: if the newly added tile is the last piece of the road
+            // and it is at the edge of the board, make it point to the edge
         }
         tile.image(roadTextures[orientation]);
         tile.update(context);
+        
+        // if we just added the first road piece, our job is done
+        if(nRoadPieces==0) return;
+
+        // update orientation for the previous road piece
+        var variable, fixed;
+        variable = roadPieces[nRoadPieces-1];
+        if(nRoadPieces==1) {
+            var r = variable.row();
+            var c = variable.col();
+            if(c==0) fixed = 'w';
+            else if(c==numCols-1) fixed = 'e';
+            else if(r==0) fixed = 'n';
+            else if(r==numRows-1) fixed = 's';
+        } else {
+            fixed = roadPieces[nRoadPieces-2];
+        }
+        variable.image(roadTextures[findSandwichOrientation(variable, fixed, tile)]);
+        variable.update(context);
     }
     
     board.tileAt = function(x, y) {

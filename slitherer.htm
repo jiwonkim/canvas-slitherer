@@ -23,7 +23,13 @@ $(function() {
         var tile = board.tileAt(evt.offsetX, evt.offsetY); 
         if(!tile) return;
         if(!tile.isRoad()) {
-            board.addRoadPiece(tile, context);
+            try {
+                board.addRoad(tile, context);
+            } catch (err) {
+                mousedown=false;
+                $('#errors p').html(err);
+                return;
+            }
             tile.isRoad(true);
         }
     });
@@ -31,6 +37,10 @@ $(function() {
 });
 </script>
 <h1 class="center">Canvas Slitherer</h1>
+<div id="errors" class="center">
+<img src="images/error.png" />
+<p>Errors here</p>
+</div>
 <canvas id="board" class="center" width="900" height="540"></canvas>
 </body>
 </html>
