@@ -1,5 +1,6 @@
 body {
     font-family: 'Trebuchet MS', sans-serif;
+    background-color: #f0f0f0;
 }
 h1 {
     width: 600px;
@@ -20,8 +21,16 @@ h1 {
     margin-right: auto;
 }
 #title {
-    float: left;
-    margin: 10px 40px 0 50px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+#intro {
+    padding: 20px;
+}
+#intro p {
+    padding: 5px;
+    font-family: 'HelveticaNeue-Light', 'Helvetica Neue Light', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    font-size: 14pt; 
 }
 #status {
     vertical-align: bottom;
@@ -83,6 +92,17 @@ h1 {
     margin-top: 15px;
 }
 
+#right {
+    -webkit-box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+    -moz-box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+    box-shadow:rgba(0,0,0,0.2) 0 1px 0 0;
+    color:#333;
+    border-radius:5px;
+    -moz-border-radius:5px;
+    -webkit-border-radius:5px;
+    border:none;
+}
+
 button {
     margin-left: 5px;
     display: inline-block;
@@ -93,7 +113,7 @@ button {
     border-radius:5px;
     -moz-border-radius:5px;
     -webkit-border-radius:5px;
-    border:none;
+    border: solid 1px #ccc;
     font-family:'Helvetica Neue',Arial,sans-serif;
     font-size:16px;
     font-weight:700;
@@ -152,12 +172,12 @@ button:active {
 }
 
 #right {
-    min-width: 800px;
     float: left;
 }
 #viewport {
     clear: both;
     position: relative;
+    width: 900px;
 }
 #viewport canvas{
     position: absolute;
@@ -176,4 +196,22 @@ button:active {
 }
 #cursor-layer {
     z-index: 4;
+}
+
+#embossed {
+    width: 900px;
+    height: 650px;
+    background: #dfdfdf;
+    background:-moz-linear-gradient(top,#fcfcfc 0%, #f0f0f0 100%);
+    background:-webkit-gradient(linear,left top,left bottom,color-stop(0%,#fcfcfc),color-stop(100%,#f0f0f0));
+    background:-webkit-linear-gradient(top,#fcfcfc 0%,#f0f0f0 100%);
+    background:-o-linear-gradient(top,#fcfcfc 0%,#f0f0f0 100%);
+    background:-ms-linear-gradient(top,#fcfcfc 0%,#f0f0f0 100%);
+    background:linear-gradient(top,#fcfcfc 0%,#f0f0f0 100%);
+    filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#fcfcfc',endColorstr='#f0f0f0',GradientType=0);
+    padding:10px 15px;
+    border-radius:5px;
+    -moz-border-radius:5px;
+    -webkit-border-radius:5px;
+    border:1px solid #dfdfdf;
 }

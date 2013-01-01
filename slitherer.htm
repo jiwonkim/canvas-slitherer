@@ -128,8 +128,27 @@ $(function() {
     }); 
 });
 </script>
-<div id="top">
-    <img id="title" src="images/title-small.png" />
+<div id="left">
+    <img id="title" class="center" src="images/title-small.png" />
+    <div class="center" id="action-selector">
+        <button id="build" class="selected">Build</button>
+        <button id="play">Play</button>
+    </div>
+    <div id="intro">
+        <p>
+        Happy New Year!
+        </p>
+        <p>
+        2013 is the year of the snake. Celebrate the new year with a round or two of good ol' <strong>Snakes and Ladders</strong>.
+        </p>
+        <p>
+        Pave the roads, unleash some snakes, sprinkle some ladders here and there, and then press <strong>Play</strong> to enjoy the game you created.
+        </p>
+    </div>
+
+</div>
+<div id="right">
+    <div id="embossed">
     <div id="status">
         <img class="status-ok" src="images/checkicon.png" />
         <img class="status-warning" src="images/bangicon.png" />
@@ -150,23 +169,12 @@ $(function() {
         <!--button id="add" class="selected"></button-->
         <button id="start-over"></button>
     </div>
-</div>
-<div id="left">
-    <div class="center" id="action-selector">
-        <button id="build" class="selected">Build</button>
-        <button id="play">Play</button>
-    </div>
-
-    <div id="controls" class="center">
-    </div>
-
-</div>
-<div id="right">
-    <div id="viewport">
+    <div id="viewport" class="center">
         <canvas id="board-layer" width="900" height="540"></canvas>
         <canvas id="snakes-layer" width="900" height="540"></canvas>
         <canvas id="ladders-layer" width="900" height="540"></canvas>
         <canvas id="cursor-layer" width="900" height="540"></canvas>
+    </div>
     </div>
 </div>
 </body>
