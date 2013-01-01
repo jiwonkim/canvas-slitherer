@@ -470,14 +470,14 @@ slitherer.stretchyProp = function() {
 }
 
 slitherer.tile = function() {
-    var row, col, width, height, gap, image;
+    var row, col, width, height, gap, image, x, y;
     var isRoad = false;
     var drawGuide = false;
     var roadNumber = 0;
     
     function tile(context) {
-        var x = col*(width+gap);
-        var y = row*(height+gap);
+        x = col*(width+gap);
+        y = row*(height+gap);
         if(image) context.drawImage(image, x, y, width, height);
 
         if(isRoad) {
@@ -513,6 +513,13 @@ slitherer.tile = function() {
     tile.gap = function(val) {
         gap = val;
         return tile;
+    }
+
+    tile.x = function() {   
+        return x;
+    }
+    tile.y = function() {   
+        return y;
     }
 
     tile.image = function(val) {
@@ -817,4 +824,141 @@ slitherer.board = function() {
     }
     
     return board;
+}
+
+slitherer.game = function() {
+    var numPlayers;
+    var players = [];
+    var path = [];
+
+    var game = {};
+    game.init = function(roads, snakes, ladders, nPlayers) {
+        numPlayers = nPlayers;
+
+        // init players
+        for(var i=0; i<numPlayers; i++) {
+            players.push(slitherer.player()
+                .name('Player '+(i+1))
+                .position(0)
+            );
+        }
+
+        // init list of game blocks
+        var roadMap = {};
+        roads.forEach(function(road) {
+            var r, c, x, y;
+            r = road.row();
+            c = road.col();
+            x = road.x(); 
+            y = road.y();
+            var block = slitherer.gameBlock()
+                .row(r).col(c).x(x).y(y);
+
+            var key = str(r) + ' ' + str(c);
+            roadMap[key] = block;
+            path.push(block);
+        });
+
+        snakes.forEach(function(snake) {
+            var sr, sc;
+            sr = snake.start().row;
+            sc = snake.start().col;
+            
+            var er, ec;
+            er = snake.end().row;
+            sc = snake.end().col;
+
+            roadMap[str(sr) + ' ' + str(sc)].snakeTo(
+                path.indexOf(roadMap[str(er) + ' ' + str(ec)])
+            );
+        });
+
+        ladders.forEach(function(ladder) {
+            var sr, sc;
+            sr = ladder.start().row;
+            sc = ladder.start().col;
+            
+            var er, ec;
+            er = ladder.end().row;
+            sc = ladder.end().col;
+
+            var startBlock = roadMap[str(sr) + ' ' + str(sc)];
+            var sidx = path.indexOf(startBlock);
+            var endBlock = roadMap[str(er) + ' ' + str(ec)];
+            var eidx = path.indexOf(endBlock);
+            
+            if(sidx < eidx) {
+                startBlock.ladderTo(eidx);
+            } else {
+                endBlock.ladderTo(sidx);
+            }
+        });
+    }
+
+}
+
+slitherer.gameBlock = function() {
+    var row, col, x, y, snakeTo, ladderTo;
+    var block = {};
+    block.row = function(val) {
+        if(val==undefined) return row;
+        row = val;
+        return block;
+    }
+    block.col = function(val) {
+        if(val==undefined) return col;
+        col = val;
+        return block;
+    }
+    block.x = function(val) {
+        if(val==undefined) return x;
+        x = val;
+        return block;
+    }
+    block.y = function(val) {
+        if(val==undefined) return y;
+        y = val;
+        return block;
+    }
+    block.snakeTo = function(val) {
+        if(val==undefined) return snakeTo;
+        snakeTo = val;
+        return block;
+    }
+    block.ladderTo = function(val) {
+        if(val==undefined) return ladderTo;
+        ladderTo = val;
+        return block;
+    }
+    return block;
+}
+
+slitherer.player = function() {
+    var name, position, avatar, context;
+    var player = {};
+    player.name = function(val) {
+        if(val==undefined) return name;
+        name = val;
+        return player;
+    }
+    player.avatar = function(val) {
+        if(val==undefined) return avatar;
+        avatar = val;
+        return player;
+    }
+    player.context = function(val) {
+        if(val==undefined) return context;
+        context = val;
+        return player;
+    }
+    player.position = function(val) {
+        if(val==undefined) return position;
+        position = val;
+        return player;
+    }
+    player.draw = function() {
+        // draw player's avatar in current position in context
+        return player;
+    }
+    return player;
 }

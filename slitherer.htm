@@ -126,6 +126,19 @@ $(function() {
             field.clearLayer(field.mode());
         }
     }); 
+
+    $('#action-selector button').click(function() {
+        var prev = $('#action-selector .selected').attr('id');
+        var curr = $(this).attr('id');
+
+        // toggle views
+        $('.'+prev).hide();
+        $('.'+curr).show();
+        
+        // update selected
+        $('#action-selector .selected').removeClass('selected');
+        $(this).addClass('selected');
+    });
 });
 </script>
 <div id="left">
@@ -134,7 +147,7 @@ $(function() {
         <button id="build" class="selected">Build</button>
         <button id="play">Play</button>
     </div>
-    <div id="intro">
+    <div id="intro" class="build">
         <p>
         Happy New Year!
         </p>
@@ -149,7 +162,10 @@ $(function() {
 </div>
 <div id="right">
     <div id="embossed">
-    <div id="status">
+    <div class="status play">
+        Play!
+    </div>
+    <div class="status build">
         <img class="status-ok" src="images/checkicon.png" />
         <img class="status-warning" src="images/bangicon.png" />
         <img class="status-error" src="images/erroricon.png" />
@@ -159,13 +175,13 @@ $(function() {
         <p class="status-error"></p>
         <p class="status-idea">Build a road by dragging the mouse on the board.</p>
     </div>
-    <div id="mode-selector">
+    <div id="mode-selector" class="build">
         <button class="selected" id="roads"></button>
         <button id="snakes"></button>
         <button id="ladders"></button>
     </div>
     
-    <div id="tool-selector">
+    <div id="tool-selector" class="build">
         <!--button id="add" class="selected"></button-->
         <button id="start-over"></button>
     </div>

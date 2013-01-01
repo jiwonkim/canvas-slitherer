@@ -32,9 +32,16 @@ h1 {
     font-family: 'HelveticaNeue-Light', 'Helvetica Neue Light', 'Helvetica Neue', Arial, Helvetica, sans-serif;
     font-size: 14pt; 
 }
-#status {
+.status {
     vertical-align: bottom;
+    height: 82px;
+}
+.status.build {
     width: 460px;
+}
+.status.play {
+    width: 100%;
+    display: none;
 }
 .status-ok {
     display: none;
@@ -52,13 +59,13 @@ h1 {
     color: #000;
 }
 
-#status img {
+.status img {
     float: left;
     margin-top: -3px;
     margin-left: 10px;
 }
 
-#status p {
+.status p {
     width: 360px;
     margin-top: 5px;
     margin-left: 15px;
@@ -72,7 +79,7 @@ h1 {
     clear: both;
 }
 
-#mode-selector, #tool-selector, #status {
+#mode-selector, #tool-selector, .status {
     display: inline-block;
     margin: 10px;
 }
@@ -214,4 +221,7 @@ button:active {
     -moz-border-radius:5px;
     -webkit-border-radius:5px;
     border:1px solid #dfdfdf;
+}
+.play {
+    display: none;
 }
