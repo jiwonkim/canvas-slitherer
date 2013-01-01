@@ -5,7 +5,7 @@ var slitherer = window.slitherer = function() {
     var contexts = {};
     var cursors = {};
     var width, height, board, coven;
-    var selectedSnake;
+    var selectedSnake, selectedLadder, selectedRoad;
 
     var field = {};
     
@@ -46,6 +46,12 @@ var slitherer = window.slitherer = function() {
             .tilewidth(Math.floor(board.tilewidth()+1)) // add gap
             .tileheight(Math.floor(board.tileheight()+1));
 
+        woodshed = slitherer.woodshed()
+            .context(contexts['ladders'])
+            .width(width).height(height)
+            .tilewidth(Math.floor(board.tilewidth()+1)) // add gap
+            .tileheight(Math.floor(board.tileheight()+1));
+
         return field;
     }
 
@@ -65,6 +71,7 @@ var slitherer = window.slitherer = function() {
     field.clearLayer = function(layer) {
         if(layer=='roads') board.clear(contexts[layer]);
         if(layer=='snakes') coven.clear();
+        if(layer=='ladders') woodshed.clear();
         else contexts[layer].clearRect(0, 0, width, height);
     }
     
@@ -95,16 +102,32 @@ var slitherer = window.slitherer = function() {
         coven.addSnake(x, y);
     }
 
-    field.updateSnake = function(x, y) {
+    field.updateSnake = function(x, y, drawGuide) {
         if(!selectedSnake) {
             selectedSnake = coven.getLastSnake();
         }
-        coven.updateSnake(selectedSnake, x, y);
+        coven.updateSnake(selectedSnake, x, y, drawGuide);
     }
     
     field.endSnake = function(x, y) {
-        field.updateSnake(x, y);
+        field.updateSnake(x, y, false);
         selectedSnake = null;
+    }
+
+    field.addLadder = function(x, y) {
+        woodshed.addLadder(x, y);
+    }
+
+    field.updateLadder = function(x, y, drawGuide) {
+        if(!selectedLadder) {
+            selectedLadder = woodshed.getLastLadder();
+        }
+        woodshed.updateLadder(selectedLadder, x, y, drawGuide);
+    }
+    
+    field.endLadder = function(x, y) {
+        field.updateLadder(x, y, false);
+        selectedLadder = null;
     }
      
     return field;
@@ -160,16 +183,17 @@ slitherer.coven = function() {
         return snakes[snakes.length-1];
     }
     coven.addSnake = function(x,y) {
-        snakes.push(slitherer.snake()
-            .tilewidth(tilewidth).tileheight(tileheight)
+        snakes.push(slitherer.stretchyProp()
+            .tilewidth(tilewidth).tileheight(tileheight).bodyLength(100)
             .start(Math.floor(y/tileheight), Math.floor(x/tilewidth))
             .background(head, body, tail));
 
         var snake = snakes[snakes.length-1];
         return coven;
     }
-    coven.updateSnake = function(snake, x, y) {
+    coven.updateSnake = function(snake, x, y, drawGuide) {
         snake.end(Math.floor(y/tileheight), Math.floor(x/tilewidth));
+        snake.drawGuide(drawGuide);
         coven.update();
         return coven;
     }
@@ -177,14 +201,89 @@ slitherer.coven = function() {
         context.clearRect(0, 0, width, height);
 
         snakes.forEach(function(snake){
-            snake.draw(context); 
+            snake.draw(context, snake.drawGuide()); 
         });
     }
     return coven;
 }
 
-slitherer.snake = function() {
-    var tilewidth, tileheight;
+slitherer.woodshed = function() {
+    var context, width, height, tilewidth, tileheight;
+    var head = new Image();
+    head.src = 'images/ladderhead.png';
+    head.loaded = false;
+    head.onLoad = function() { head.loaded = true; };
+
+    var body = new Image();
+    body.src = 'images/ladderbody.png';
+    body.loaded = false;
+    body.onLoad = function() { body.loaded = true; };
+
+    var tail = new Image();
+    tail.src = 'images/laddertail.png';
+    tail.loaded = false;
+    tail.onLoad = function() { tail.loaded = true; };
+
+    var ladders = [];
+    var woodshed = {};
+    woodshed.context = function(val) {
+        if(val==undefined) return context;
+        context = val;
+        return woodshed;
+    }
+    woodshed.clear = function() {
+        ladders = [];
+        context.clearRect(0, 0, width, height);
+    } 
+    woodshed.width = function(val) {
+        if(val==undefined) return val;
+        width = val;
+        return woodshed;
+    }
+    woodshed.height = function(val) {
+        if(val==undefined) return val;
+        height = val;
+        return woodshed;
+    }
+    woodshed.tilewidth = function(val) {
+        tilewidth = val;
+        return woodshed;
+    }
+    woodshed.tileheight = function(val) {
+        tileheight = val;
+        return woodshed;
+    }
+    woodshed.getLastLadder = function() {
+        return ladders[ladders.length-1];
+    }
+    woodshed.addLadder = function(x,y) {
+        ladders.push(slitherer.stretchyProp().bodyLength(40)
+            .tilewidth(tilewidth).tileheight(tileheight)
+            .start(Math.floor(y/tileheight), Math.floor(x/tilewidth))
+            .background(head, body, tail));
+
+        var ladder = ladders[ladders.length-1];
+        return woodshed;
+    }
+    woodshed.updateLadder = function(ladder, x, y, drawGuide) {
+        ladder.end(Math.floor(y/tileheight), Math.floor(x/tilewidth));
+        ladder.drawGuide(drawGuide);
+        woodshed.update();
+        return woodshed;
+    }
+    woodshed.update = function() {
+        context.clearRect(0, 0, width, height);
+
+        ladders.forEach(function(ladder){
+            ladder.draw(context, ladder.drawGuide()); 
+        });
+    }
+    return woodshed;
+}
+
+slitherer.stretchyProp = function() {
+    var tilewidth, tileheight, bodyLength;
+    var drawGuide;
 
     var start = {}
     start.row = start.col = 0;
@@ -193,106 +292,118 @@ slitherer.snake = function() {
     end.row = end.col = 0;
 
     var head, body, tail;
-    var snake = {};
-    snake.background = function(h, b, t) {
+    var prop = {};
+    prop.background = function(h, b, t) {
         head = h;
         body = b;
         tail = t;
-        return snake; 
+        return prop; 
     }
-    snake.tilewidth = function(val) {
+    prop.bodyLength = function(val) {
+        if(val==undefined) return bodyLength;
+        bodyLength = val;
+        return prop;
+    }
+    prop.tilewidth = function(val) {
         if(val==undefined) return tilewidth;
         tilewidth = val; 
-        return snake;
+        return prop;
     }
-    snake.tileheight = function(val) {
+    prop.tileheight = function(val) {
         if(val==undefined) return tileheight;
         tileheight = val; 
-        return snake;
+        return prop;
     }
-    snake.start = function(row, col) {
+    prop.start = function(row, col) {
         if(row==undefined) return start;
         start.row = row;
         start.col = col;
-        return snake;
+        return prop;
     }
-    snake.end = function(row, col) {
+    prop.end = function(row, col) {
         if(row==undefined) return end;
         end.row = row;
         end.col = col;
-        return snake;
+        return prop;
     }
-    snake.draw = function(context) {
+    prop.drawGuide = function(val) {
+        if(val==undefined) return drawGuide;
+        drawGuide = val;
+        return prop;
+    }
+    prop.draw = function(context, drawGuide) {
         var startx = tilewidth*start.col + tilewidth/2;
         var starty = tileheight*start.row + tileheight/2;
 
         var endx = tilewidth*end.col + tilewidth/2;
         var endy = tileheight*end.row + tileheight/2;
 
-        context.lineWidth = 2;
-        context.lineCap = 'round';
-        context.beginPath();
-        context.moveTo(startx, starty); 
-        context.lineTo(endx, endy);
-        context.closePath();
-        context.strokeStyle = '#000';
-        context.stroke();
+        drawProp(context, startx, starty, endx, endy);
+        if(drawGuide) drawEditableGuide(context, startx, starty, endx, endy);
+    }
 
-        var radius = 5;
+    function drawEditableGuide(context, startx, starty, endx, endy) {
+        var radius = 10;
+        
         context.beginPath();
-        context.arc(startx, starty, 5, 0, 2*Math.PI);
-        context.arc(endx, endy, 5, 0, 2*Math.PI);
-        context.fillStyle = '#000';
+        context.arc(startx, starty, radius, 0, 2*Math.PI);
+        context.fillStyle = 'rgba(255, 0, 0, 0.5)';
         context.fill();
         context.closePath();
 
-        context.save();
-        var offset = 10;
+        context.beginPath();
+        context.arc(endx, endy, radius, 0, 2*Math.PI);
+        context.fillStyle = 'rgba(0, 255, 255, 0.5)';
+        context.fill();
+        context.closePath();
+    }
 
+    function drawProp(context, startx, starty, endx, endy) {
         // get rotation of line
-        var dx = end.x - start.x;
-        var dy = start.y - end.y; // in canvas, y grows down
+        var dx = endx - startx;
+        var dy = starty - endy; // in canvas, y grows down
         var theta = Math.atan(dy/dx);
 
-        context.rotate(theta);
-        context.drawImage(head, startx-tilewidth/2, starty-tileheight/2, tilewidth, tileheight);
+        // draw head
+        context.save();
+        context.translate(startx, starty);
+        if(dx>=0) context.rotate(Math.PI-theta);
+        else context.rotate(Math.PI*2-theta);
+        context.translate(-tilewidth/2, -tileheight/2);
+        context.drawImage(head, 0, 0, tilewidth, tileheight);
         context.restore();
 
-        /*
-        var offset = 10;
+        // draw tail
+        context.save();
+        context.translate(endx, endy);
+        if(dx>=0) context.rotate(Math.PI-theta);
+        else context.rotate(Math.PI*2-theta);
+        context.translate(-tilewidth/2, -tileheight/2);
+        context.drawImage(tail, 0, 0, tilewidth, tileheight);
+        context.restore();
 
-        // get rotation of line
-        var dx = end.x - start.x;
-        var dy = start.y - end.y; // in canvas, y grows down
-        var theta = Math.atan(dy/dx);
+        // draw body
+        // find total body length
+        var length = Math.sqrt(dx*dx + dy*dy) - tilewidth;
 
+        // find total body tiles to repeat
+        var numBodies = Math.floor(length/bodyLength + 1);
 
-        // get x, y offsets for endpoints
-        var ox = Math.cos(Math.PI/2 - theta)*offset;
-        var oy = Math.sin(Math.PI/2 - theta)*offset;
+        context.save();
+        context.translate(startx, starty);
+        if(dx>=0) context.rotate(Math.PI-theta);
+        else context.rotate(Math.PI*2-theta);
 
-        context.lineWidth = 2;
-        context.lineCap = 'round';
+        context.translate(-tilewidth/2, -tileheight/2);
+        for(var i=0; i<numBodies; i++) {
+            var offset = length/numBodies;
+            context.translate(-offset, 0);
+            context.drawImage(body, 0, 0, offset, tileheight);
+        }
+        context.restore();
 
-        context.beginPath();
-        // draw arc for snake's head
-       context.arc(start.x, start.y, offset, Math.PI*0.5-theta, Math.PI*1.5-theta, (dx<0));
-        context.moveTo(start.x + ox, start.y + oy);
-        context.lineTo(end.x + ox, end.y + oy);
-        context.lineTo(end.x - ox, end.y - oy);
-        context.lineTo(start.x - ox, start.y - oy);
-        context.closePath();
-
-        context.save(); // Save the context before clipping
-        context.clip(); // Clip to whatever path is on the context
-        context.drawImage(background, 0, 0, 900, 540);
-        context.restore(); // Get rid of the clipping region
-
-        context.strokeStyle = '#000';
-        context.stroke();
-        */
     }
-    return snake;
+    return prop;
 }
 
 slitherer.tile = function() {

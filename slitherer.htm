@@ -23,11 +23,15 @@ $(function() {
         mousedown = true;
         if(field.mode()=='snakes') {
             field.addSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+        } else if(field.mode()=='ladders') {
+            field.addLadder(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
         }
     }).mouseup(function(evt) {
         mousedown = false;
         if(field.mode()=='snakes') {
             field.endSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+        } else if(field.mode()=='ladders') {
+            field.endLadder(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
         }
     }).mouseout(function(evt) {
         // remove mouse cursor image
@@ -43,10 +47,18 @@ $(function() {
                     field.addRoadAt(evt.offsetX + modeOffset, evt.offsetY + modeOffset);
                     break;
                 case 'snakes':
-                    field.updateSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset);
+                    field.updateSnake(
+                        evt.offsetX + modeOffset,
+                        evt.offsetY + modeOffset,
+                        true
+                    );
                     break;
                 case 'ladders':
-                    console.log("Add ladder");
+                    field.updateLadder(
+                        evt.offsetX + modeOffset,
+                        evt.offsetY + modeOffset,
+                        true
+                    );
                     break;
                 default:
                     break;
@@ -75,7 +87,15 @@ $(function() {
 });
 </script>
 <div id="top">
+<table>
+<td>
 <img src="images/title.jpg" />
+</td>
+<td id="status">
+<img src="images/erroricon.png" />
+<p>Errors here</p>
+</td>
+</table>
 <hr />
 </div>
 <div id="left">
@@ -95,10 +115,6 @@ $(function() {
 
 </div>
 <div id="right">
-    <div id="status">
-    <img src="images/erroricon.png" />
-    <p>Errors here</p>
-    </div>
     <div id="viewport">
         <canvas id="board-layer" width="900" height="540"></canvas>
         <canvas id="snakes-layer" width="900" height="540"></canvas>
