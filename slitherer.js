@@ -1,9 +1,11 @@
 var slitherer = window.slitherer = function() {
     //TODO Make field into a closure with multiple layers of canvases
     var mode = 'roads';
+    var tool = 'add';
     var contexts = {};
     var cursors = {};
-    var width, height, board;
+    var width, height, board, coven;
+    var selectedSnake;
 
     var field = {};
     
@@ -37,6 +39,13 @@ var slitherer = window.slitherer = function() {
 
         // init board
         board();
+
+        coven = slitherer.coven()
+            .context(contexts['snakes'])
+            .width(width).height(height)
+            .tilewidth(Math.floor(board.tilewidth()+1)) // add gap
+            .tileheight(Math.floor(board.tileheight()+1));
+
         return field;
     }
 
@@ -45,9 +54,18 @@ var slitherer = window.slitherer = function() {
         mode = val;
         return field;
     }
+    
+    field.tool = function(val) {
+        if(val==undefined) return tool;
+        tool = val;
+        return field;
+    }
+
 
     field.clearLayer = function(layer) {
-        contexts[layer].clearRect(0, 0, width, height);
+        if(layer=='roads') board.clear(contexts[layer]);
+        if(layer=='snakes') coven.clear();
+        else contexts[layer].clearRect(0, 0, width, height);
     }
     
     field.displayCursor = function(x, y) {
@@ -68,31 +86,224 @@ var slitherer = window.slitherer = function() {
             tile.isRoad(true);
         }
     }
+
+    field.selectSnake = function(val) {
+        // TODO: select snake using coordinates
+    }
+
+    field.addSnake = function(x, y) {
+        coven.addSnake(x, y);
+    }
+
+    field.updateSnake = function(x, y) {
+        if(!selectedSnake) {
+            selectedSnake = coven.getLastSnake();
+        }
+        coven.updateSnake(selectedSnake, x, y);
+    }
+    
+    field.endSnake = function(x, y) {
+        field.updateSnake(x, y);
+        selectedSnake = null;
+    }
      
     return field;
 }
 
+slitherer.coven = function() {
+    var context, width, height, tilewidth, tileheight;
+    var head = new Image();
+    head.src = 'images/snakehead.png';
+    head.loaded = false;
+    head.onLoad = function() { head.loaded = true; };
+
+    var body = new Image();
+    body.src = 'images/snakebody.png';
+    body.loaded = false;
+    body.onLoad = function() { body.loaded = true; };
+
+    var tail = new Image();
+    tail.src = 'images/snaketail.png';
+    tail.loaded = false;
+    tail.onLoad = function() { tail.loaded = true; };
+
+    var snakes = [];
+    var coven = {};
+    coven.context = function(val) {
+        if(val==undefined) return context;
+        context = val;
+        return coven;
+    }
+    coven.clear = function() {
+        snakes = [];
+        context.clearRect(0, 0, width, height);
+    } 
+    coven.width = function(val) {
+        if(val==undefined) return val;
+        width = val;
+        return coven;
+    }
+    coven.height = function(val) {
+        if(val==undefined) return val;
+        height = val;
+        return coven;
+    }
+    coven.tilewidth = function(val) {
+        tilewidth = val;
+        return coven;
+    }
+    coven.tileheight = function(val) {
+        tileheight = val;
+        return coven;
+    }
+    coven.getLastSnake = function() {
+        return snakes[snakes.length-1];
+    }
+    coven.addSnake = function(x,y) {
+        snakes.push(slitherer.snake()
+            .tilewidth(tilewidth).tileheight(tileheight)
+            .start(Math.floor(y/tileheight), Math.floor(x/tilewidth))
+            .background(head, body, tail));
+
+        var snake = snakes[snakes.length-1];
+        return coven;
+    }
+    coven.updateSnake = function(snake, x, y) {
+        snake.end(Math.floor(y/tileheight), Math.floor(x/tilewidth));
+        coven.update();
+        return coven;
+    }
+    coven.update = function() {
+        context.clearRect(0, 0, width, height);
+
+        snakes.forEach(function(snake){
+            snake.draw(context); 
+        });
+    }
+    return coven;
+}
+
+slitherer.snake = function() {
+    var tilewidth, tileheight;
+
+    var start = {}
+    start.row = start.col = 0;
+
+    var end = {}
+    end.row = end.col = 0;
+
+    var head, body, tail;
+    var snake = {};
+    snake.background = function(h, b, t) {
+        head = h;
+        body = b;
+        tail = t;
+        return snake; 
+    }
+    snake.tilewidth = function(val) {
+        if(val==undefined) return tilewidth;
+        tilewidth = val; 
+        return snake;
+    }
+    snake.tileheight = function(val) {
+        if(val==undefined) return tileheight;
+        tileheight = val; 
+        return snake;
+    }
+    snake.start = function(row, col) {
+        if(row==undefined) return start;
+        start.row = row;
+        start.col = col;
+        return snake;
+    }
+    snake.end = function(row, col) {
+        if(row==undefined) return end;
+        end.row = row;
+        end.col = col;
+        return snake;
+    }
+    snake.draw = function(context) {
+        var startx = tilewidth*start.col + tilewidth/2;
+        var starty = tileheight*start.row + tileheight/2;
+
+        var endx = tilewidth*end.col + tilewidth/2;
+        var endy = tileheight*end.row + tileheight/2;
+
+        context.lineWidth = 2;
+        context.lineCap = 'round';
+        context.beginPath();
+        context.moveTo(startx, starty); 
+        context.lineTo(endx, endy);
+        context.closePath();
+        context.strokeStyle = '#000';
+        context.stroke();
+
+        var radius = 5;
+        context.beginPath();
+        context.arc(startx, starty, 5, 0, 2*Math.PI);
+        context.arc(endx, endy, 5, 0, 2*Math.PI);
+        context.fillStyle = '#000';
+        context.fill();
+        context.closePath();
+
+        context.save();
+        var offset = 10;
+
+        // get rotation of line
+        var dx = end.x - start.x;
+        var dy = start.y - end.y; // in canvas, y grows down
+        var theta = Math.atan(dy/dx);
+
+        context.rotate(theta);
+        context.drawImage(head, startx-tilewidth/2, starty-tileheight/2, tilewidth, tileheight);
+        context.restore();
+
+        /*
+        var offset = 10;
+
+        // get rotation of line
+        var dx = end.x - start.x;
+        var dy = start.y - end.y; // in canvas, y grows down
+        var theta = Math.atan(dy/dx);
+
+
+        // get x, y offsets for endpoints
+        var ox = Math.cos(Math.PI/2 - theta)*offset;
+        var oy = Math.sin(Math.PI/2 - theta)*offset;
+
+        context.lineWidth = 2;
+        context.lineCap = 'round';
+
+        context.beginPath();
+        // draw arc for snake's head
+       context.arc(start.x, start.y, offset, Math.PI*0.5-theta, Math.PI*1.5-theta, (dx<0));
+        context.moveTo(start.x + ox, start.y + oy);
+        context.lineTo(end.x + ox, end.y + oy);
+        context.lineTo(end.x - ox, end.y - oy);
+        context.lineTo(start.x - ox, start.y - oy);
+        context.closePath();
+
+        context.save(); // Save the context before clipping
+        context.clip(); // Clip to whatever path is on the context
+        context.drawImage(background, 0, 0, 900, 540);
+        context.restore(); // Get rid of the clipping region
+
+        context.strokeStyle = '#000';
+        context.stroke();
+        */
+    }
+    return snake;
+}
+
 slitherer.tile = function() {
-    var row, col, width, height, gap;
+    var row, col, width, height, gap, image;
     var isRoad = false;
     var roadNumber = 0;
-
-    // default tile background
-    var image = new Image();
-    image.src = 'images/grass.jpg';
-    image.loaded = false;
-    image.onLoad = function() {
-        image.loaded = true;
-    }
-
+    
     function tile(context) {
-        if(!image.loaded) {
-            setTimeout(function() { tile(context); }, 10);
-        }
-        
         var x = col*(width+gap);
         var y = row*(height+gap);
-        context.drawImage(image, x, y, width, height);
+        if(image) context.drawImage(image, x, y, width, height);
 
         if(isRoad) {
             // draw road number
@@ -168,6 +379,11 @@ slitherer.board = function() {
     var path = [];
     var roadPieces = [];
     var roadTextures = {};
+    
+    var background = new Image();
+    background.src = 'images/grass.jpg';
+    background.loaded = false;
+    background.onLoad = function() { background.loaded = true; };
 
     function board(context) {
         // load default textures
@@ -210,6 +426,14 @@ slitherer.board = function() {
         return board;
     }
 
+    board.tilewidth = function() {
+        return tilew;
+    }
+
+    board.tileheight = function() {
+        return tileh;
+    }
+
     board.create = function() {
         // create board
         tilew = (width - gap*(numCols-1)) / numCols;
@@ -221,7 +445,8 @@ slitherer.board = function() {
                 tiles[r][c] = slitherer.tile()
                     .row(r).col(c)
                     .width(tilew).height(tileh)
-                    .gap(gap);
+                    .gap(gap)
+                    .image(background);
             }
         }  
         return board;
@@ -229,10 +454,23 @@ slitherer.board = function() {
 
     board.clear = function(context) {
         context.clearRect(0, 0, width, height);
+        for(var r=0; r<numRows; r++) {
+            for(var c=0; c<numCols; c++) { 
+                tiles[r][c].image(background)
+                    .isRoad(false);
+            }
+        }
+        roadPieces = [];
+        board.update(context);
+        
         return board;
     }
 
     board.update = function(context) {
+        if(!background.loaded) setTimeout(function() {
+            board.update(context);
+        }, 10);
+
         // render board
         for(var r=0; r<numRows; r++) {
             for(var c=0; c<numCols; c++) { 

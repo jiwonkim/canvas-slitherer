@@ -18,10 +18,17 @@ $(function() {
         );
 
     var mousedown = false;
+    var modeOffset = 5;
     $('canvas').mousedown(function(evt) {
         mousedown = true;
+        if(field.mode()=='snakes') {
+            field.addSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+        }
     }).mouseup(function(evt) {
         mousedown = false;
+        if(field.mode()=='snakes') {
+            field.endSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+        }
     }).mouseout(function(evt) {
         // remove mouse cursor image
         field.clearLayer('cursor')
@@ -31,7 +38,19 @@ $(function() {
         
         if(!mousedown) return;
         try {
-            field.addRoadAt(evt.offsetX, evt.offsetY);
+            switch(field.mode()) {
+                case 'roads':
+                    field.addRoadAt(evt.offsetX + modeOffset, evt.offsetY + modeOffset);
+                    break;
+                case 'snakes':
+                    field.updateSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset);
+                    break;
+                case 'ladders':
+                    console.log("Add ladder");
+                    break;
+                default:
+                    break;
+            }
         } catch (err) {
             mousedown=false;
             $('#errors p').html(err);
@@ -42,6 +61,16 @@ $(function() {
         $('#mode-selector .selected').removeClass('selected');
         $(this).addClass('selected');
         field.mode($(this).attr('id'));
+    }); 
+    $('#tool-selector button').click(function() {
+        var id = $(this).attr('id');
+        if(id!='start-over') {
+            $('#tool-selector .selected').removeClass('selected');
+            $(this).addClass('selected');
+            field.tool(id);
+        } else {
+            field.clearLayer(field.mode());
+        }
     }); 
 });
 </script>
@@ -58,8 +87,8 @@ $(function() {
 
     <hr />
     
-    <div id="tools">
-        <button id="add"></button>
+    <div id="tool-selector">
+        <button id="add" class="selected"></button>
         <button id="delete"></button>
         <button id="start-over"></button>
     </div>
