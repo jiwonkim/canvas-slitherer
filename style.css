@@ -20,10 +20,27 @@ h1 {
     margin-right: auto;
 }
 #title {
-    display: inline-block;
+    float: left;
+    margin: 10px 40px 0 50px;
 }
 #status {
     vertical-align: bottom;
+    width: 460px;
+}
+.status-ok {
+    display: none;
+    color: green;
+}
+.status-warning {
+    display: none;
+    color: orange;
+}
+.status-error {
+    display: none;
+    color: #bb3936;
+}
+.status-idea {
+    color: #000;
 }
 
 #status img {
@@ -33,16 +50,22 @@ h1 {
 }
 
 #status p {
-    margin-top: 20px;
+    width: 360px;
+    margin-top: 5px;
     margin-left: 15px;
     float: left;
-    color: #bb3936;
-    font-size: 12pt;
+    font-size: 16pt;
+    font-family: 'HelveticaNeue-Light', 'Helvetica Neue Light', 'Helvetica Neue', Arial, Helvetica, sans-serif;
 }
 
 #top {
     display: block;
     clear: both;
+}
+
+#mode-selector, #tool-selector, #status {
+    display: inline-block;
+    margin: 10px;
 }
 
 #left {
@@ -53,6 +76,11 @@ h1 {
 #left hr {
     width: 250px;
     margin: 10px;
+}
+
+#controls {
+    width: 280px;
+    margin-top: 15px;
 }
 
 button {
@@ -70,12 +98,23 @@ button {
     font-size:16px;
     font-weight:700;
     padding:4px 4px;
-    text-shadow:#FE6 0 1px 0;
     width: 82px;
     height: 82px;
     background-repeat: no-repeat;
     background-color:#f0f0f0;
 }    
+
+#action-selector {
+    margin-top: 10px;
+    width: 190px;
+}
+
+#action-selector button {
+    height: 32px;
+    text-shadow:#fff 0 1px 0;
+    color:#333;
+    background-color:#ddd;
+}
 
 .selected,
 button:active {

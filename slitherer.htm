@@ -7,6 +7,16 @@
 </head>
 <body>
 <script type="text/javascript">
+function displayStatus(statusName, message) {
+    ['idea', 'ok', 'warning', 'error'].forEach(function(s) {
+        if(s==statusName) {
+            $('.status-'+s).css('display', 'block');
+        } else {
+            $('.status-'+s).css('display', 'none');
+        }
+    });
+    $('p.status-'+statusName).html(message);
+}
 $(function() {
     document.onselectstart = function () { return false; }
     var field = slitherer()
@@ -21,17 +31,32 @@ $(function() {
     var modeOffset = 5;
     $('canvas').mousedown(function(evt) {
         mousedown = true;
-        if(field.mode()=='snakes') {
-            field.addSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
-        } else if(field.mode()=='ladders') {
-            field.addLadder(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+        try {
+            if(field.mode()=='snakes') {
+                field.addSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+            } else if(field.mode()=='ladders') {
+                field.addLadder(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+            }
+        } catch(err) {
+            displayStatus(err.type, err.message); 
         }
+
     }).mouseup(function(evt) {
         mousedown = false;
-        if(field.mode()=='snakes') {
-            field.endSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
-        } else if(field.mode()=='ladders') {
-            field.endLadder(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+        try {
+            if(field.mode()=='snakes') {
+                field.endSnake(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+                displayStatus('idea', 'Add a snake by dragging the mouse from road to road.');
+            } else if(field.mode()=='ladders') {
+                field.endLadder(evt.offsetX + modeOffset, evt.offsetY + modeOffset); 
+                displayStatus('idea', 'Add a ladder by dragging the mouse from road to road.');
+            } else if(field.mode()=='roads') {
+                if(field.endRoad()) {
+                    displayStatus('ok', 'Congratulations! You have successfully built a road.');
+                }
+            }
+        } catch(err) {
+            displayStatus(err.type, err.message);  
         }
     }).mouseout(function(evt) {
         // remove mouse cursor image
@@ -45,6 +70,7 @@ $(function() {
             switch(field.mode()) {
                 case 'roads':
                     field.addRoadAt(evt.offsetX + modeOffset, evt.offsetY + modeOffset);
+                    displayStatus('idea', 'Build a road by dragging the mouse on the board.');
                     break;
                 case 'snakes':
                     field.updateSnake(
@@ -52,6 +78,7 @@ $(function() {
                         evt.offsetY + modeOffset,
                         true
                     );
+                    displayStatus('idea', 'Add a snake by dragging the mouse from road to road.');
                     break;
                 case 'ladders':
                     field.updateLadder(
@@ -59,20 +86,35 @@ $(function() {
                         evt.offsetY + modeOffset,
                         true
                     );
+                    displayStatus('idea', 'Add a ladder by dragging the mouse from road to road.');
                     break;
                 default:
                     break;
             }
         } catch (err) {
             mousedown=false;
-            $('#errors p').html(err);
+            displayStatus(err.type, err.message);
         }
     });
 
     $('#mode-selector button').click(function() {
         $('#mode-selector .selected').removeClass('selected');
         $(this).addClass('selected');
-        field.mode($(this).attr('id'));
+        var mode = $(this).attr('id');
+        field.mode(mode);
+        switch(mode) {
+            case 'roads':
+                displayStatus('idea', 'Build a road by dragging the mouse on the board.');
+                break;
+            case 'snakes':
+                displayStatus('idea', 'Add a snake by dragging the mouse from road to road.');
+                break;
+            case 'ladders':
+                displayStatus('idea', 'Add a ladder by dragging the mouse from road to road.');
+                break;
+            default:
+                break;
+        }
     }); 
     $('#tool-selector button').click(function() {
         var id = $(this).attr('id');
@@ -87,30 +129,35 @@ $(function() {
 });
 </script>
 <div id="top">
-<table>
-<td>
-<img src="images/title.jpg" />
-</td>
-<td id="status">
-<img src="images/erroricon.png" />
-<p>Errors here</p>
-</td>
-</table>
-<hr />
-</div>
-<div id="left">
+    <img id="title" src="images/title-small.png" />
+    <div id="status">
+        <img class="status-ok" src="images/checkicon.png" />
+        <img class="status-warning" src="images/bangicon.png" />
+        <img class="status-error" src="images/erroricon.png" />
+        <img class="status-idea" src="images/ideaicon.png" />
+        <p class="status-ok"></p>
+        <p class="status-warning"></p>
+        <p class="status-error"></p>
+        <p class="status-idea">Build a road by dragging the mouse on the board.</p>
+    </div>
     <div id="mode-selector">
         <button class="selected" id="roads"></button>
         <button id="snakes"></button>
         <button id="ladders"></button>
     </div>
-
-    <hr />
     
     <div id="tool-selector">
-        <button id="add" class="selected"></button>
-        <button id="delete"></button>
+        <!--button id="add" class="selected"></button-->
         <button id="start-over"></button>
+    </div>
+</div>
+<div id="left">
+    <div class="center" id="action-selector">
+        <button id="build" class="selected">Build</button>
+        <button id="play">Play</button>
+    </div>
+
+    <div id="controls" class="center">
     </div>
 
 </div>

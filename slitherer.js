@@ -34,6 +34,7 @@ var slitherer = window.slitherer = function() {
             .gap(1)
             .numRows(10)
             .numCols(15)
+            .context(contexts['roads'])
             .create()
             .update(contexts['roads']);
 
@@ -67,7 +68,6 @@ var slitherer = window.slitherer = function() {
         return field;
     }
 
-
     field.clearLayer = function(layer) {
         if(layer=='roads') board.clear(contexts[layer]);
         if(layer=='snakes') coven.clear();
@@ -94,39 +94,99 @@ var slitherer = window.slitherer = function() {
         }
     }
 
+    field.endRoad = function() {
+        try {
+            return board.endRoad();
+        } catch(err) {
+            throw err;
+        }
+    }
+
     field.selectSnake = function(val) {
-        // TODO: select snake using coordinates
+        selectedSnake = val;
     }
 
     field.addSnake = function(x, y) {
-        coven.addSnake(x, y);
+        if(!board.tileAt(x, y).isRoad()) {
+            throw {'type': 'error', 'message': "The head and tail of a snake need to touch the road"};
+        } else {
+            coven.addSnake(x, y);
+            field.selectSnake(coven.getLastSnake());
+        }
     }
 
     field.updateSnake = function(x, y, drawGuide) {
-        if(!selectedSnake) {
-            selectedSnake = coven.getLastSnake();
-        }
         coven.updateSnake(selectedSnake, x, y, drawGuide);
     }
     
     field.endSnake = function(x, y) {
         field.updateSnake(x, y, false);
+        if(!board.tileAt(x, y).isRoad()) {
+            if(selectedSnake) {
+                coven.removeSnake();
+                selectedSnake = null;
+            }
+            throw {'type': 'error', 'message': "The head and tail of a snake need to touch the road"};
+        }
+        if(selectedSnake) {
+            var start = selectedSnake.start();
+            var end = selectedSnake.end();
+            var n1 = board.tileAtRowAndCol(start.row, start.col).roadNumber();
+            var n2 = board.tileAtRowAndCol(end.row, end.col).roadNumber();
+
+            if (n1 < n2) {
+                selectedSnake.start(end.row, end.col);
+                selectedSnake.end(start.row, start.col);
+                coven.update();
+            } else if(n1==n2) {
+                coven.removeSnake();
+                selectedSnake = null;
+                throw {'type': 'error', 'message': "A snake cannot begin and end on the same tile."};
+            }
+
+        }
         selectedSnake = null;
+    }
+    
+    field.selectLadder = function(val) {
+        selectedLadder = val;
     }
 
     field.addLadder = function(x, y) {
-        woodshed.addLadder(x, y);
+        if(!board.tileAt(x, y).isRoad()) {
+            throw {'type': 'error', 'message': "The top and bottom of a ladder need to touch the road"};
+        } else {
+            woodshed.addLadder(x, y);
+            field.selectLadder(woodshed.getLastLadder());
+        }
     }
 
     field.updateLadder = function(x, y, drawGuide) {
-        if(!selectedLadder) {
-            selectedLadder = woodshed.getLastLadder();
-        }
         woodshed.updateLadder(selectedLadder, x, y, drawGuide);
     }
     
     field.endLadder = function(x, y) {
         field.updateLadder(x, y, false);
+        if(!board.tileAt(x, y).isRoad()) {
+            if(selectedLadder) {
+                woodshed.removeLadder();
+                selectedLadder = null;
+            }
+            throw {'type': 'error', 'message': "The top and bottom of a ladder need to touch the road"};
+        }
+        if(selectedLadder) {
+            var start = selectedLadder.start();
+            var end = selectedLadder.end();
+            var n1 = board.tileAtRowAndCol(start.row, start.col).roadNumber();
+            var n2 = board.tileAtRowAndCol(end.row, end.col).roadNumber();
+
+            if (n1==n2) {
+                woodshed.removeLadder();
+                selectedLadder = null;
+                throw {'type': 'error', 'message': "A ladder cannot begin and end on the same tile."};
+            }
+
+        }
         selectedLadder = null;
     }
      
@@ -192,6 +252,7 @@ slitherer.coven = function() {
         return coven;
     }
     coven.updateSnake = function(snake, x, y, drawGuide) {
+        if(!snake) return;
         snake.end(Math.floor(y/tileheight), Math.floor(x/tilewidth));
         snake.drawGuide(drawGuide);
         coven.update();
@@ -203,6 +264,10 @@ slitherer.coven = function() {
         snakes.forEach(function(snake){
             snake.draw(context, snake.drawGuide()); 
         });
+    }
+    coven.removeSnake = function(idx) {
+        snakes.splice(snakes.length-1, 1);
+        coven.update();
     }
     return coven;
 }
@@ -266,6 +331,7 @@ slitherer.woodshed = function() {
         return woodshed;
     }
     woodshed.updateLadder = function(ladder, x, y, drawGuide) {
+        if(!ladder) return;
         ladder.end(Math.floor(y/tileheight), Math.floor(x/tilewidth));
         ladder.drawGuide(drawGuide);
         woodshed.update();
@@ -278,6 +344,10 @@ slitherer.woodshed = function() {
             ladder.draw(context, ladder.drawGuide()); 
         });
     }
+    woodshed.removeLadder = function(idx) {
+        ladders.splice(ladders.length-1, 1);
+        woodshed.update();
+    }
     return woodshed;
 }
 
@@ -285,12 +355,7 @@ slitherer.stretchyProp = function() {
     var tilewidth, tileheight, bodyLength;
     var drawGuide;
 
-    var start = {}
-    start.row = start.col = 0;
-
-    var end = {}
-    end.row = end.col = 0;
-
+    var start, end;
     var head, body, tail;
     var prop = {};
     prop.background = function(h, b, t) {
@@ -316,14 +381,12 @@ slitherer.stretchyProp = function() {
     }
     prop.start = function(row, col) {
         if(row==undefined) return start;
-        start.row = row;
-        start.col = col;
+        start = {'row': row, 'col': col};
         return prop;
     }
     prop.end = function(row, col) {
         if(row==undefined) return end;
-        end.row = row;
-        end.col = col;
+        end = {'row': row, 'col': col};
         return prop;
     }
     prop.drawGuide = function(val) {
@@ -409,6 +472,7 @@ slitherer.stretchyProp = function() {
 slitherer.tile = function() {
     var row, col, width, height, gap, image;
     var isRoad = false;
+    var drawGuide = false;
     var roadNumber = 0;
     
     function tile(context) {
@@ -457,7 +521,7 @@ slitherer.tile = function() {
         return tile;
     }
     
-    tile.update = function(context) {
+    tile.update = function(context, drawGuide) {
         context.clearRect(
             col*(width + gap) - gap,
             row*(height + gap) - gap,
@@ -474,6 +538,12 @@ slitherer.tile = function() {
         return tile;
     }
 
+    tile.drawGuide = function(val) {
+        if(val==undefined) return drawGuide;
+        drawGuide = val;
+        return tile;
+    }
+
     tile.roadNumber = function(val) {
         if(val==undefined) return roadNumber;
         roadNumber = val;
@@ -484,7 +554,7 @@ slitherer.tile = function() {
 }
 
 slitherer.board = function() {
-    var width, height, numRows, numCols, gap;
+    var width, height, numRows, numCols, gap, board;
     var tilew, tileh;
     var tiles = [];
     var path = [];
@@ -545,6 +615,12 @@ slitherer.board = function() {
         return tileh;
     }
 
+    board.context = function(val) {
+        if(val==undefined) return context;
+        context = val;
+        return board;
+    }
+
     board.create = function() {
         // create board
         tilew = (width - gap*(numCols-1)) / numCols;
@@ -593,7 +669,11 @@ slitherer.board = function() {
 
     board.addRoad = function(tile, context) {
         if(positionNotConnected(tile)) {
-            throw "Illegal";
+            if(roadPieces.length==0) {
+                throw {'type': 'error', 'message': "Please start the road at the edge of the board."};
+            } else {
+                throw {'type': 'error', 'message': "Please continue the road where it left off."};
+            }
         }
 
         try {
@@ -605,6 +685,29 @@ slitherer.board = function() {
         // add tile to continuing road
         roadPieces.push(tile);
         tile.roadNumber(roadPieces.length);
+    }
+
+    board.endRoad = function() {
+        var nRoadPieces = roadPieces.length;
+        if(nRoadPieces==0) return false;
+
+        var last = roadPieces[nRoadPieces-1];
+        if(nRoadPieces==1 || !isOnEdge(roadPieces[nRoadPieces-1])) {
+            throw {'type': 'warning', 'message': 'Road does not lead anywhere. Please complete your road!'};
+        } else {
+            var exit;
+            if(last.col()==0) exit = 'w';
+            else if(last.col()==numCols-1) exit = 'e';
+            else if(last.row()==0) exit = 'n';
+            else exit = 's';
+
+            var orientation = findSandwichOrientation(last,
+                roadPieces[nRoadPieces-2], exit);
+
+            last.image(roadTextures[orientation]);
+            last.update(context, false);
+            return true;
+        }
     }
 
     // returns 'n', 's', 'e', 'w' that describes tile's location
@@ -629,13 +732,15 @@ slitherer.board = function() {
         else return 'e';
     }
 
-    function positionNotConnected(tile) {
+    function isOnEdge(tile) {
         var r = tile.row();
         var c = tile.col();
+        return (r==0 || r==numRows-1 || c==0 || c==numCols-1);
+    }
 
+    function positionNotConnected(tile) {
         if(roadPieces.length==0) {
-            return (r>0 && r<numRows-1) &&
-                (c>0 && c<numCols-1);
+            return !isOnEdge(tile);
         } else {
             return !findRelativeLocation(tile,
                 roadPieces[roadPieces.length-1]);
@@ -673,7 +778,7 @@ slitherer.board = function() {
             // and it is at the edge of the board, make it point to the edge
         }
         tile.image(roadTextures[orientation]);
-        tile.update(context);
+        tile.update(context, 'rgba(255, 0, 0, 0.5)');
         
         // if we just added the first road piece, our job is done
         if(nRoadPieces==0) return;
@@ -692,13 +797,15 @@ slitherer.board = function() {
             fixed = roadPieces[nRoadPieces-2];
         }
         variable.image(roadTextures[findSandwichOrientation(variable, fixed, tile)]);
-        variable.update(context);
+        variable.update(context, false);
     }
-    
     board.tileAt = function(x, y) {
         var row = rowAt(y);
         var col = colAt(x);
-        return tiles[row][col];
+        return board.tileAtRowAndCol(row, col);
+    }
+    board.tileAtRowAndCol = function(r, c) {
+        return tiles[r][c];
     }
 
     function rowAt(y) {
