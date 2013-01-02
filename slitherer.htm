@@ -127,19 +127,168 @@ $(function() {
         }
     }); 
 
+    //TODO: clean this shit
+    var flow = ['num-players', 'player-info', 'done'];
+    var currentFlow = 0;
+    var numPlayers;    
+    var playerNames = [];
+    var playerAvatars = [];
+    var currPlayer = 0;
+    var game;
     $('#action-selector button').click(function() {
         var prev = $('#action-selector .selected').attr('id');
         var curr = $(this).attr('id');
+        field.action(curr);
 
         // toggle views
         $('.'+prev).hide();
         $('.'+curr).show();
-        
+
         // update selected
         $('#action-selector .selected').removeClass('selected');
         $(this).addClass('selected');
+
+        if(curr=='play') {
+            for(var i=0; i<flow.length; i++) {
+                var elem = $('#'+flow[i]);
+                if(i==currentFlow) elem.show();
+                else elem.hide();
+            }
+            
+            popup();
+        } else {
+            $('#dialog-overlay, #dialog').hide();
+            $('#dice-roll-result').html('');
+        }
     });
+
+    $('.cancel').click(function() {
+        field.action('build');
+        $('.play').hide();
+        $('.build').show();
+        
+        // update selected
+        $('#action-selector .selected').removeClass('selected');
+        $('#action-selector button#build').addClass('selected');
+        
+        // hide dialog window
+        $('#dialog-overlay, #dialog').hide();
+
+        // reset stuff
+        currentFlow = 0;
+        currPlayer = 0;
+    });
+
+
+    //TODO: Arg so messy need to clean this shit up
+    $('.next').click(function() {
+        switch(currentFlow) {
+            case 0:
+                numPlayers = $('#num-players input').val();
+                $('#num-players').hide();
+                currentFlow++;
+                $('#'+flow[currentFlow]).show();
+                $('#player-info .dialog-message').html('Player '+(currPlayer+1));
+                $('#player-info input').focus();
+                break;
+            case 1:
+                currPlayer++;
+                if(currPlayer==numPlayers) {
+                    currentFlow++;
+                    $('#player-info').hide();
+                    $('#'+flow[currentFlow]).show();
+                } else {
+                    $('#player-info .dialog-message').html('Player '+(currPlayer+1));
+                }
+                playerNames[currPlayer-1] = $('#player-info input').val();
+                
+                var avatar = new Image();
+                avatar.src = 'images/'+avatars[currAvatar]+'.png';
+                playerAvatars[currPlayer-1] = avatar;
+                $('#player-info input').val('');
+                $('#player-info input').focus();
+                break;
+            case 2:
+                game = slitherer.game()
+                    .init(field.getRoads(), field.getSnakes(), field.getLadders(), playerNames, playerAvatars);
+                $('#dialog, #dialog-overlay').hide();
+                // reset stuff
+                currentFlow = currPlayer = 0;
+                break;
+            default:
+                break;
+        }
+        
+    });
+
+    var currAvatar = 0;
+    var avatars = [
+        'gamepiece-explorer-red',
+        'gamepiece-explorer-blue',
+        'gamepiece-explorer-green',
+        'gamepiece-explorer-yellow',
+        'gamepiece-explorer-purple',
+    ];
+    $('.avatar').click(function() {
+        currAvatar = (currAvatar + 1)%5;
+        this.src = 'images/' + avatars[currAvatar] + '.png';
+    });
+
+    $('#dice').click(function() {
+        // play sound effect
+        $('#sound')[0].currentTime = 0;
+        $('#sound')[0].play();
+
+        // clear results pane
+        $('#dice-roll-result').html('');
+
+        result = 0;
+        rollDie('#dice .face1', 1000);
+        rollDie('#dice .face2', 1400);
+    });
+    
+    addDice();
 });
+
+function addDice() {
+    var d1 = Math.floor(Math.random()*6 + 1);
+    var d2 = Math.floor(Math.random()*6 + 1);
+    $('#dice .face1').attr('src', 'images/dice'+d1+'.png')
+    $('#dice .face2').attr('src', 'images/dice'+d2+'.png')
+}
+
+var result = 0;
+function rollDie(selector, duration) {
+    var face;
+    var roll= setInterval(function() {
+        face = Math.floor(Math.random()*6 + 1);
+        $(selector).attr('src', 'images/dice'+face+'.png');
+    }, 100);
+
+    $(selector).css('opacity', 0.4);
+    setTimeout(function() {
+        clearInterval(roll); 
+        $(selector).css('opacity', 1);
+        result += face;
+        $('#dice-roll-result').html(result);
+    }, duration);
+
+}
+
+function popup(callback) {
+    // get the screen height and width  
+    var maskHeight = $(document).height();  
+    var maskWidth = $(window).width();
+     
+    // calculate the values for center alignment
+    var dialogTop =  (maskHeight/3) - ($('#dialog').height()/2);  
+    var dialogLeft = (maskWidth/2) - ($('#dialog').width()/2); 
+     
+    // assign values to the overlay and dialog box
+    $('#dialog-overlay').css({height:maskHeight, width:maskWidth}).show();
+    $('#dialog').css({top:dialogTop, left:dialogLeft}).show();
+     
+}
 </script>
 <div id="left">
     <img id="title" class="center" src="images/title-small.png" />
@@ -147,7 +296,7 @@ $(function() {
         <button id="build" class="selected">Build</button>
         <button id="play">Play</button>
     </div>
-    <div id="intro" class="build">
+    <div class="build intro">
         <p>
         Happy New Year!
         </p>
@@ -157,6 +306,19 @@ $(function() {
         <p>
         Pave the roads, unleash some snakes, sprinkle some ladders here and there, and then press <strong>Play</strong> to enjoy the game you created.
         </p>
+    </div>
+    <div class="play intro">
+        <p>Click to roll the dice!
+        </p>
+    </div>
+    <div id="dice" class="play center">
+        <img class="face face1" />
+        <img class="face face2" />
+        <audio id="sound" preload="auto">
+          <source src="sounds/dice.mp3" type="audio/mp3">
+        </audio>
+    </div>
+    <div id="dice-roll-result" class="play center">
     </div>
 
 </div>
@@ -193,5 +355,54 @@ $(function() {
     </div>
     </div>
 </div>
+
+<div id="dialog-overlay">
+<!--img id="title" class="center" src="images/title-small.png" /-->
+</div>
+<div id="dialog">
+    <div id="num-players" class="dialog-box">
+        <div class="dialog-message">How many players?</div>
+        <input type="number" min=1 max=10 value=2></input>
+        <div class="buttons">
+            <button class="next">Next</button>
+            <button class="cancel">Cancel</button>
+        </div>
+    </div>
+    <div id="player-info" class="dialog-box">
+        <div class="dialog-message"></div>
+        <table>
+            <tr>
+                <td class="label">
+                    <label>Name</label>
+                </td>
+                <td>
+                    <input type="text" id="name"></input>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">
+                <label>Gamepiece</label>
+                </td>
+                <td>
+                <div id="avatar-selector">
+                <img class="avatar" src="images/gamepiece-explorer-red.png"/>
+                </div>
+                </td>
+             </tr>
+        </table> 
+        <div class="buttons">
+            <button class="next">Next</button>
+            <button class="cancel">Cancel</button>
+        </div>
+    </div>
+    <div id="done" class="dialog-box">
+        <div class="dialog-message">Done!</div>
+        <div class="buttons">
+            <button class="next">Play</button>
+            <button class="cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

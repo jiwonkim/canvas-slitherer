@@ -1,6 +1,7 @@
 var slitherer = window.slitherer = function() {
     //TODO Make field into a closure with multiple layers of canvases
     var mode = 'roads';
+    var action = 'build';
     var tool = 'add';
     var contexts = {};
     var cursors = {};
@@ -19,7 +20,7 @@ var slitherer = window.slitherer = function() {
         contexts['cursor'] = cursorCanvas.getContext('2d');
 
         // init cursors
-        ['roads', 'snakes', 'ladders'].forEach(function(mode) {
+        ['roads', 'snakes', 'ladders', 'play'].forEach(function(mode) {
             cursors[mode] = new Image();
             cursors[mode].src = 'images/'+mode+'cursor.png';
             cursors[mode].loaded = false;
@@ -61,6 +62,12 @@ var slitherer = window.slitherer = function() {
         mode = val;
         return field;
     }
+
+    field.action = function(val) {
+        if(val==undefined) return action;
+        action = val;
+        return field;
+    }
     
     field.tool = function(val) {
         if(val==undefined) return tool;
@@ -77,7 +84,8 @@ var slitherer = window.slitherer = function() {
     
     field.displayCursor = function(x, y) {
         field.clearLayer('cursor');
-        contexts['cursor'].drawImage(cursors[mode], x, y);
+        if(action=='build') contexts['cursor'].drawImage(cursors[mode], x, y);
+        else contexts['cursor'].drawImage(cursors[action], x, y);
     }
 
     field.addRoadAt = function(x, y) {
@@ -189,6 +197,16 @@ var slitherer = window.slitherer = function() {
         }
         selectedLadder = null;
     }
+
+    field.getRoads = function() {
+        return board.roads(); 
+    }
+    field.getSnakes = function() {
+        return coven.snakes();
+    }
+    field.getLadders = function() {
+        return woodshed.ladders();
+    }
      
     return field;
 }
@@ -212,6 +230,9 @@ slitherer.coven = function() {
 
     var snakes = [];
     var coven = {};
+    coven.snakes = function() {
+        return snakes;
+    }
     coven.context = function(val) {
         if(val==undefined) return context;
         context = val;
@@ -291,6 +312,9 @@ slitherer.woodshed = function() {
 
     var ladders = [];
     var woodshed = {};
+    woodshed.ladders = function() {
+        return ladders;
+    }
     woodshed.context = function(val) {
         if(val==undefined) return context;
         context = val;
@@ -814,6 +838,9 @@ slitherer.board = function() {
     board.tileAtRowAndCol = function(r, c) {
         return tiles[r][c];
     }
+    board.roads = function() {
+        return roadPieces;
+    }
 
     function rowAt(y) {
         return Math.floor(y/(tileh+gap));
@@ -832,13 +859,16 @@ slitherer.game = function() {
     var path = [];
 
     var game = {};
-    game.init = function(roads, snakes, ladders, nPlayers) {
-        numPlayers = nPlayers;
+    game.init = function(roads, snakes, ladders, playerNames, playerAvatars) {
+        console.log(playerNames);
+        console.log(playerAvatars);
+        numPlayers = playerNames.length;
 
         // init players
         for(var i=0; i<numPlayers; i++) {
             players.push(slitherer.player()
-                .name('Player '+(i+1))
+                .name(playerNames[i])
+                .avatar(playerAvatars[i])
                 .position(0)
             );
         }
@@ -854,7 +884,7 @@ slitherer.game = function() {
             var block = slitherer.gameBlock()
                 .row(r).col(c).x(x).y(y);
 
-            var key = str(r) + ' ' + str(c);
+            var key = String(r) + ' ' + String(c);
             roadMap[key] = block;
             path.push(block);
         });
@@ -866,10 +896,10 @@ slitherer.game = function() {
             
             var er, ec;
             er = snake.end().row;
-            sc = snake.end().col;
+            ec = snake.end().col;
 
-            roadMap[str(sr) + ' ' + str(sc)].snakeTo(
-                path.indexOf(roadMap[str(er) + ' ' + str(ec)])
+            roadMap[String(sr) + ' ' + String(sc)].snakeTo(
+                path.indexOf(roadMap[String(er) + ' ' + String(ec)])
             );
         });
 
@@ -880,11 +910,11 @@ slitherer.game = function() {
             
             var er, ec;
             er = ladder.end().row;
-            sc = ladder.end().col;
+            ec = ladder.end().col;
 
-            var startBlock = roadMap[str(sr) + ' ' + str(sc)];
+            var startBlock = roadMap[String(sr) + ' ' + String(sc)];
             var sidx = path.indexOf(startBlock);
-            var endBlock = roadMap[str(er) + ' ' + str(ec)];
+            var endBlock = roadMap[String(er) + ' ' + String(ec)];
             var eidx = path.indexOf(endBlock);
             
             if(sidx < eidx) {
@@ -894,7 +924,7 @@ slitherer.game = function() {
             }
         });
     }
-
+    return game;
 }
 
 slitherer.gameBlock = function() {
