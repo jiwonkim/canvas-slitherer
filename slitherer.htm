@@ -7,6 +7,7 @@
 </head>
 <body>
 <script type="text/javascript">
+var game;
 function displayStatus(statusName, message) {
     ['idea', 'ok', 'warning', 'error'].forEach(function(s) {
         if(s==statusName) {
@@ -134,7 +135,6 @@ $(function() {
     var playerNames = [];
     var playerAvatars = [];
     var currPlayer = 0;
-    var game;
     $('#action-selector button').click(function() {
         var prev = $('#action-selector .selected').attr('id');
         var curr = $(this).attr('id');
@@ -263,6 +263,10 @@ $(function() {
 });
 
 function rollDice(callback) {
+    if(game.playing()) {
+        console.log("The last player hasn't finished his turn yet.");
+        return;
+    }
     var rolled = false;
     rollDie('#dice .face1', 1000, function() {
         if(rolled) callback();

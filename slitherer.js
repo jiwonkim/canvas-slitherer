@@ -867,7 +867,7 @@ slitherer.board = function() {
 }
 
 slitherer.game = function() {
-    var numPlayers;
+    var numPlayers, playing;
     var players = [];
     var path = [];
     var turn = 0;
@@ -875,6 +875,11 @@ slitherer.game = function() {
     var winner = false;
 
     var game = {};
+    game.playing = function(val) {
+        if(val==undefined) return playing;
+        playing = val;
+        return game;
+    }
     game.turn = function(val) {
         if(val==undefined) return turn;
         turn = val;
@@ -981,29 +986,67 @@ slitherer.game = function() {
     }
     game.play = function(roll) {
         if(winner) return;
+        playing = true;
+        var player = players[turn];
+        var block;
         var move = setInterval(function() {
             // move player forward
             // update player's position
             if(--roll == 0) clearInterval(move);
 
-            var player = players[turn];
-            if(player.position()==path.length-1) {
+            if(player.position()==path.length) {
                 clearInterval(move);
                 console.log("Player "+player.name()+" wins!");
                 winner = player;
             }
-
             player.position(player.position()+1);
             player.block(path[player.position()]);
+            console.log("Player has moved to: "+player.position());
             update();
+
+            if(roll==0) endMove(player);
 
         }, 500);
     }
-    function update() {
+    function endMove(player) {
+        console.log("Ending move at: "+player.position());
+        var block = player.block();
+        var destination = block.snakeTo() ? block.snakeTo() : block.ladderTo();
+        if(destination) {
+            slide(block, path[destination], player, function() {
+                player.position(destination);
+                player.block(path[destination]);
+                playing = false;
+            });
+        } else {
+            playing = false;
+        }
+    }
+    function update(except) {
         gameContext.clearRect(0, 0, width, height); 
         players.forEach(function(player) {
-            player.draw();
+            if(!except || except.indexOf(player)==-1) {
+                player.draw();
+            }
         });
+    }
+    function slide(from, to, player, callback) {
+        var t = 0;
+        var x = from.x();
+        var y = from.y();
+        var dx = to.x() - from.x();
+        var dy = to.y() - from.y();
+        var slide = setInterval(function() {
+            update([player]);
+            player.drawAt(x + dx*t, y + dy*t);
+            if(t==1.0) {
+                clearInterval(slide);
+                callback();
+            }
+
+            t += 0.05;
+            if(t>1) t = 1.0;
+        }, 50);
     }
     return game;
 }
@@ -1083,9 +1126,11 @@ slitherer.player = function() {
         return player;
     }
     player.draw = function() {
-        console.log("drawing!");
-        // draw player's avatar in current position in context
-        context.drawImage(avatar, block.x(), block.y(), block.width(), block.height());
+        player.drawAt(block.x(), block.y());
+        return player;
+    }
+    player.drawAt = function(x, y) {
+        context.drawImage(avatar, x, y, block.width(), block.height());
         return player;
     }
     return player;
