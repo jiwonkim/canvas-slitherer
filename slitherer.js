@@ -998,6 +998,7 @@ slitherer.game = function() {
                 clearInterval(move);
                 console.log("Player "+player.name()+" wins!");
                 winner = player;
+                //clear();
             }
             player.position(player.position()+1);
             player.block(path[player.position()]);
@@ -1022,8 +1023,11 @@ slitherer.game = function() {
             playing = false;
         }
     }
-    function update(except) {
+    function clear() {
         gameContext.clearRect(0, 0, width, height); 
+    }
+    function update(except) {
+        clear();
         players.forEach(function(player) {
             if(!except || except.indexOf(player)==-1) {
                 player.draw();
