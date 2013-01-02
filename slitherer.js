@@ -56,6 +56,19 @@ var slitherer = window.slitherer = function() {
 
         return field;
     }
+    field.width = function() {
+        return width;
+    }
+    field.height = function() {
+        return height;
+    }
+
+    field.tilewidth = function() {
+        return Math.floor(board.tilewidth()+1);
+    }
+    field.tileheight = function() {
+        return Math.floor(board.tileheight()+1);
+    }
 
     field.mode = function(val) {
         if(val==undefined) return mode;
@@ -857,21 +870,45 @@ slitherer.game = function() {
     var numPlayers;
     var players = [];
     var path = [];
+    var turn = 0;
+    var width, height, tilewidth, tileheight, gameContext;
+    var winner = false;
 
     var game = {};
-    game.init = function(roads, snakes, ladders, playerNames, playerAvatars) {
+    game.turn = function(val) {
+        if(val==undefined) return turn;
+        turn = val;
+        return game;
+    }
+    game.passTurn = function() {
+        turn = (turn+1)%numPlayers;
+        return game;
+    }
+    game.width = function(val) {
+        if(val==undefined) return width;
+        width = val;
+        return game;
+    }
+    game.height = function(val) {
+        if(val==undefined) return height;
+        height = val;
+        return game;
+    }
+    game.tilewidth = function(val) {
+        if(val==undefined) return tilewidth;
+        tilewidth = val;
+        return game;
+    }
+    game.tileheight = function(val) {
+        if(val==undefined) return tileheight;
+        tileheight = val;
+        return game;
+    }
+    game.init = function(roads, snakes, ladders, playerNames, playerAvatars, context) {
+        gameContext = context;
         console.log(playerNames);
         console.log(playerAvatars);
         numPlayers = playerNames.length;
-
-        // init players
-        for(var i=0; i<numPlayers; i++) {
-            players.push(slitherer.player()
-                .name(playerNames[i])
-                .avatar(playerAvatars[i])
-                .position(0)
-            );
-        }
 
         // init list of game blocks
         var roadMap = {};
@@ -882,11 +919,14 @@ slitherer.game = function() {
             x = road.x(); 
             y = road.y();
             var block = slitherer.gameBlock()
+                .width(tilewidth).height(tileheight)
                 .row(r).col(c).x(x).y(y);
 
             var key = String(r) + ' ' + String(c);
             roadMap[key] = block;
             path.push(block);
+            console.log(block.width());
+            console.log(block.height());
         });
 
         snakes.forEach(function(snake) {
@@ -923,12 +963,53 @@ slitherer.game = function() {
                 endBlock.ladderTo(sidx);
             }
         });
+
+        // init players
+        for(var i=0; i<numPlayers; i++) {
+            var player = slitherer.player()
+                .context(context)
+                .name(playerNames[i])
+                .avatar(playerAvatars[i])
+                .block(path[0])
+                .position(0)
+                .draw();
+
+            players.push(player);
+        }
+
+        return game;
+    }
+    game.play = function(roll) {
+        if(winner) return;
+        var move = setInterval(function() {
+            // move player forward
+            // update player's position
+            if(--roll == 0) clearInterval(move);
+
+            var player = players[turn];
+            if(player.position()==path.length-1) {
+                clearInterval(move);
+                console.log("Player "+player.name()+" wins!");
+                winner = player;
+            }
+
+            player.position(player.position()+1);
+            player.block(path[player.position()]);
+            update();
+
+        }, 500);
+    }
+    function update() {
+        gameContext.clearRect(0, 0, width, height); 
+        players.forEach(function(player) {
+            player.draw();
+        });
     }
     return game;
 }
 
 slitherer.gameBlock = function() {
-    var row, col, x, y, snakeTo, ladderTo;
+    var row, col, x, y, snakeTo, ladderTo, width, height;
     var block = {};
     block.row = function(val) {
         if(val==undefined) return row;
@@ -950,6 +1031,16 @@ slitherer.gameBlock = function() {
         y = val;
         return block;
     }
+    block.width = function(val) {
+        if(val==undefined) return width;
+        width = val;
+        return block;
+    }
+    block.height = function(val) {
+        if(val==undefined) return height;
+        height = val;
+        return block;
+    }
     block.snakeTo = function(val) {
         if(val==undefined) return snakeTo;
         snakeTo = val;
@@ -964,8 +1055,13 @@ slitherer.gameBlock = function() {
 }
 
 slitherer.player = function() {
-    var name, position, avatar, context;
+    var name, block, avatar, context, position;
     var player = {};
+    player.position = function(val) {
+        if(val==undefined) return position;
+        position = val;
+        return player;
+    }
     player.name = function(val) {
         if(val==undefined) return name;
         name = val;
@@ -981,13 +1077,15 @@ slitherer.player = function() {
         context = val;
         return player;
     }
-    player.position = function(val) {
-        if(val==undefined) return position;
-        position = val;
+    player.block = function(val) {
+        if(val==undefined) return block;
+        block = val;
         return player;
     }
     player.draw = function() {
+        console.log("drawing!");
         // draw player's avatar in current position in context
+        context.drawImage(avatar, block.x(), block.y(), block.width(), block.height());
         return player;
     }
     return player;

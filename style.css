@@ -204,9 +204,13 @@ button:active {
 #ladders-layer {
     z-index: 3;
 }
-#cursor-layer {
+#gamepiece-layer {
     z-index: 4;
 }
+#cursor-layer {
+    z-index: 5;
+}
+
 
 #embossed {
     width: 900px;

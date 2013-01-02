@@ -210,8 +210,12 @@ $(function() {
                 break;
             case 2:
                 game = slitherer.game()
-                    .init(field.getRoads(), field.getSnakes(), field.getLadders(), playerNames, playerAvatars);
+                    .width(field.width()).height(field.height())
+                    .tilewidth(field.tilewidth()).tileheight(field.tileheight())
+                    .init(field.getRoads(), field.getSnakes(), field.getLadders(), playerNames, playerAvatars, $('#gamepiece-layer')[0].getContext('2d'));
                 $('#dialog, #dialog-overlay').hide();
+                console.log("Starting game! Player 1's turn");
+
                 // reset stuff
                 currentFlow = currPlayer = 0;
                 break;
@@ -243,12 +247,32 @@ $(function() {
         $('#dice-roll-result').html('');
 
         result = 0;
-        rollDie('#dice .face1', 1000);
-        rollDie('#dice .face2', 1400);
+        rollDice(function() {
+            console.log(playerNames[game.turn()]+" has rolled "+result);
+
+            // move player
+            game.play(result);
+
+            game.passTurn();
+            console.log(playerNames[game.turn()]+"'s turn");
+        });
+
     });
     
     addDice();
 });
+
+function rollDice(callback) {
+    var rolled = false;
+    rollDie('#dice .face1', 1000, function() {
+        if(rolled) callback();
+        else rolled = true;
+    });
+    rollDie('#dice .face2', 1400, function() {
+        if(rolled) callback();
+        else rolled = true;
+    });
+}
 
 function addDice() {
     var d1 = Math.floor(Math.random()*6 + 1);
@@ -258,7 +282,7 @@ function addDice() {
 }
 
 var result = 0;
-function rollDie(selector, duration) {
+function rollDie(selector, duration, callback) {
     var face;
     var roll= setInterval(function() {
         face = Math.floor(Math.random()*6 + 1);
@@ -271,6 +295,7 @@ function rollDie(selector, duration) {
         $(selector).css('opacity', 1);
         result += face;
         $('#dice-roll-result').html(result);
+        callback();
     }, duration);
 
 }
@@ -351,6 +376,7 @@ function popup(callback) {
         <canvas id="board-layer" width="900" height="540"></canvas>
         <canvas id="snakes-layer" width="900" height="540"></canvas>
         <canvas id="ladders-layer" width="900" height="540"></canvas>
+        <canvas id="gamepiece-layer" width="900" height="540"></canvas>
         <canvas id="cursor-layer" width="900" height="540"></canvas>
     </div>
     </div>
